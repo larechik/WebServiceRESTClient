@@ -55,7 +55,7 @@ public class App {
         ClientResponse response =
                 webResource.type(MediaType.APPLICATION_JSON).delete(ClientResponse.class);
         status = response.getEntity(String.class);
-        System.out.println("status: " + response.getEntity(String.class));
+        System.out.println("status: " + status);
 
     }
 
@@ -122,7 +122,7 @@ public class App {
         ClientResponse response =
                 webResource.type(MediaType.APPLICATION_JSON).post(ClientResponse.class);
         status = response.getEntity(String.class);
-        System.out.println("status: " + response.getEntity(String.class));
+        System.out.println("status: " + status);
     }
 
     private static void insertPerson(BufferedReader br) {
