@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 public class App {
     private static final String URL = "http://localhost:8081/rest/persons";
     private static Client client;
@@ -54,6 +56,9 @@ public class App {
         String status = null;
         ClientResponse response =
                 webResource.type(MediaType.APPLICATION_JSON).delete(ClientResponse.class);
+        if (response.getStatus() != ClientResponse.Status.OK.getStatusCode()) {
+            throw new IllegalStateException("Request failed: " + response.getEntity(String.class));
+        }
         status = response.getEntity(String.class);
         System.out.println("status: " + status);
 
@@ -121,6 +126,9 @@ public class App {
         String status = null;
         ClientResponse response =
                 webResource.type(MediaType.APPLICATION_JSON).post(ClientResponse.class);
+        if (response.getStatus() != ClientResponse.Status.OK.getStatusCode()) {
+            throw new IllegalStateException("Request failed: " + response.getEntity(String.class));
+        }
         status = response.getEntity(String.class);
         System.out.println("status: " + status);
     }
@@ -178,7 +186,7 @@ public class App {
                 webResource.type(MediaType.APPLICATION_JSON).put(ClientResponse.class);
 
         if (response.getStatus() != ClientResponse.Status.OK.getStatusCode()) {
-            throw new IllegalStateException("Request failed");
+            throw new IllegalStateException("Request failed: " +response.getEntity(String.class));
         }
         //GenericType<List<Person>> type = new GenericType<List<Person>>() {};
         //GenericType<Integer> type = new GenericType<Integer>(){};
@@ -194,7 +202,7 @@ public class App {
         ClientResponse response =
                 webResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
         if (response.getStatus() != ClientResponse.Status.OK.getStatusCode()) {
-            throw new IllegalStateException("Request failed");
+            throw new IllegalStateException("Request failed: " +response.getEntity(String.class));
         }
         GenericType<List<Person>> type = new GenericType<List<Person>>() {};
         return response.getEntity(type);
@@ -227,13 +235,13 @@ public class App {
                 webResource = webResource.queryParam("id", id);
             } else if ("fn".equals(temp[0])) {
                 name = temp[1];
-                webResource = webResource.queryParam("fn", name);
+                webResource = webResource.queryParam("name", name);
             } else if ("mn".equals(temp[0])) {
                 middlename = temp[1];
-                webResource = webResource.queryParam("mn", middlename);
+                webResource = webResource.queryParam("middlename", middlename);
             } else if ("sr".equals(temp[0])) {
                 surname = temp[1];
-                webResource = webResource.queryParam("sr", surname);
+                webResource = webResource.queryParam("surname", surname);
             } else if ("dob".equals(temp[0])) {
                 dob = temp[1];
                 webResource = webResource.queryParam("dob", dob);
@@ -246,8 +254,9 @@ public class App {
         List<Person> persons = null;
         ClientResponse response =
                 webResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+        //Response resp = response.
         if (response.getStatus() != ClientResponse.Status.OK.getStatusCode()) {
-            throw new IllegalStateException("Request failed");
+            throw new IllegalStateException("Request failed: " +response.getEntity(String.class));
         }
         GenericType<List<Person>> type = new GenericType<List<Person>>() {};
         return response.getEntity(type);
