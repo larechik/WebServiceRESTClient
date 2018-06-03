@@ -1,20 +1,23 @@
 package com.makhnovetc.rest;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.GenericType;
-import com.sun.jersey.api.client.WebResource;
+
+import com.sun.jersey.api.client.*;
+import com.sun.xml.internal.ws.client.AsyncInvoker;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 public class App {
     private static final String URL = "http://localhost:8081/rest/persons";
     private static Client client;
-    public static void main(String[] args) {
+
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
         client = Client.create();
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         System.out.println("Select the type of action: 1 - select; 2 - insert; 3 - update; 4 - delete");
@@ -43,9 +46,9 @@ public class App {
         }
     }
 
-    private static void deletePerson(BufferedReader br) {
+    private static void deletePerson(BufferedReader br) throws InterruptedException, ExecutionException {
         System.out.println("Please, enter the id of the line you want deleted...");
-        WebResource webResource = client.resource(URL);
+        AsyncWebResource webResource = client.asyncResource(URL);
         String delId = null;
         try {
             delId = br.readLine();
@@ -54,8 +57,12 @@ public class App {
             e.printStackTrace();
         }
         String status = null;
-        ClientResponse response =
+        Future<ClientResponse> resp =
                 webResource.type(MediaType.APPLICATION_JSON).delete(ClientResponse.class);
+        while (!resp.isDone()) {
+            Thread.sleep(1000);
+        }
+        ClientResponse response = resp.get();
         if (response.getStatus() != ClientResponse.Status.OK.getStatusCode()) {
             throw new IllegalStateException("Request failed: " + response.getEntity(String.class));
         }
@@ -64,9 +71,9 @@ public class App {
 
     }
 
-    private static void updatePerson(BufferedReader br) {
+    private static void updatePerson(BufferedReader br) throws InterruptedException, ExecutionException {
         boolean test = true;
-        WebResource webResource = client.resource(URL);
+        AsyncWebResource webResource = client.asyncResource(URL);
         while (test) {
             System.out.println("Please, enter new fields values and the id of the line you want...");
             System.out.println("id-for column id");
@@ -124,8 +131,12 @@ public class App {
 
         }
         String status = null;
-        ClientResponse response =
+        Future<ClientResponse> resp =
                 webResource.type(MediaType.APPLICATION_JSON).post(ClientResponse.class);
+        while (!resp.isDone()) {
+            Thread.sleep(1000);
+        }
+        ClientResponse response = resp.get();
         if (response.getStatus() != ClientResponse.Status.OK.getStatusCode()) {
             throw new IllegalStateException("Request failed: " + response.getEntity(String.class));
         }
@@ -133,9 +144,9 @@ public class App {
         System.out.println("status: " + status);
     }
 
-    private static void insertPerson(BufferedReader br) {
+    private static void insertPerson(BufferedReader br) throws InterruptedException, ExecutionException {
         boolean test = true;
-        WebResource webResource = client.resource(URL);
+        AsyncWebResource webResource = client.asyncResource(URL);
         while (test) {
             System.out.println("Please, write your query...");
             System.out.println("fn-for column name");
@@ -173,20 +184,23 @@ public class App {
                     webResource = webResource.queryParam("sex", sex);
                 }
             }
-            if (!(name.isEmpty()||middlename.isEmpty()||surname.isEmpty()||dob.isEmpty()||sex.isEmpty())){
+            if (!(name.isEmpty() || middlename.isEmpty() || surname.isEmpty() || dob.isEmpty() || sex.isEmpty())) {
                 test = false;
-            }else {
-                System.out.println("name="+name+" middlename="+middlename+" surname="+surname+" dob="+dob+" sex="+sex);
+            } else {
+                System.out.println("name=" + name + " middlename=" + middlename + " surname=" + surname + " dob=" + dob + " sex=" + sex);
                 System.out.println("You did not specify all the options");
                 test = true;
             }
         }
 
-        ClientResponse response =
+        Future<ClientResponse> resp =
                 webResource.type(MediaType.APPLICATION_JSON).put(ClientResponse.class);
-
+        while (!resp.isDone()) {
+            Thread.sleep(1000);
+        }
+        ClientResponse response = resp.get();
         if (response.getStatus() != ClientResponse.Status.OK.getStatusCode()) {
-            throw new IllegalStateException("Request failed: " +response.getEntity(String.class));
+            throw new IllegalStateException("Request failed: " + response.getEntity(String.class));
         }
         //GenericType<List<Person>> type = new GenericType<List<Person>>() {};
         //GenericType<Integer> type = new GenericType<Integer>(){};
@@ -194,22 +208,28 @@ public class App {
         System.out.println("id = " + response.getEntity(String.class));
     }
 
-    private static List<Person> getAllPersons(Client client, String name) {
-        WebResource webResource = client.resource(URL);
+    private static List<Person> getAllPersons(Client client, String name) throws InterruptedException, ExecutionException {
+        AsyncWebResource webResource = client.asyncResource(URL);
         if (name != null) {
             webResource = webResource.queryParam("name", name);
         }
-        ClientResponse response =
+        Future<ClientResponse> response =
                 webResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
-        if (response.getStatus() != ClientResponse.Status.OK.getStatusCode()) {
-            throw new IllegalStateException("Request failed: " +response.getEntity(String.class));
+        while (!response.isDone()) {
+            Thread.sleep(1000);
         }
-        GenericType<List<Person>> type = new GenericType<List<Person>>() {};
-        return response.getEntity(type);
+        ClientResponse resp = response.get();
+        if (resp.getStatus() != ClientResponse.Status.OK.getStatusCode()) {
+            throw new IllegalStateException("Request failed: " + resp.getEntity(String.class));
+        }
+        GenericType<List<Person>> type = new GenericType<List<Person>>() {
+        };
+        return resp.getEntity(type);
     }
 
-    private static List<Person> findPersons(BufferedReader br) {
-        WebResource webResource = client.resource(URL);
+    private static List<Person> findPersons(BufferedReader br) throws InterruptedException, ExecutionException {
+        AsyncWebResource webResource = client.asyncResource(URL);
+        //WebResource webResource = client.resource(URL);
         System.out.println("Please, write your query...");
         System.out.println("id-for column id");
         System.out.println("fn-for column name");
@@ -250,17 +270,21 @@ public class App {
                 webResource = webResource.queryParam("sex", sex);
             }
         }
-
-        List<Person> persons = null;
-        ClientResponse response =
+        Future<ClientResponse> response =
                 webResource.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
         //Response resp = response.
-        if (response.getStatus() != ClientResponse.Status.OK.getStatusCode()) {
-            throw new IllegalStateException("Request failed: " +response.getEntity(String.class));
+        while (!response.isDone()) {
+            Thread.sleep(1000);
         }
-        GenericType<List<Person>> type = new GenericType<List<Person>>() {};
-        return response.getEntity(type);
+        ClientResponse resp = response.get();
+        if (resp.getStatus() != ClientResponse.Status.OK.getStatusCode()) {
+            throw new IllegalStateException("Request failed: " + resp.getEntity(String.class));
+        }
+        GenericType<List<Person>> type = new GenericType<List<Person>>() {
+        };
+        return resp.getEntity(type);
     }
+
     private static void printList(List<Person> persons) {
         for (Person person : persons) {
             System.out.println(person);
